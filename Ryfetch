@@ -1,0 +1,252 @@
+#!/bin/bash
+
+# WHITE="\e[97m"
+# BLACK="\e[30m"
+# GRAY="\e[90m"    
+# RED="\e[31m"
+# GREEN="\e[32m"
+# YELLOW="\e[33m"
+# BLUE="\e[34m"
+# MAGENTA="\e[35m"
+
+CYAN="\e[36m\e[1m"
+BOLD="\e[1m"
+
+# FAINT="\e[2m"
+# ITALICS="\e[3m"
+# UNDERLINE="\e[4m"
+# FLASHING="\e[5m"
+# FLASHING2="\e[6m"
+# INVISIBLE="\e[7m"
+# THROUGH-LINE="\e[9m"
+
+# BACKGROUND_WHITE="\e[7m" # With Black Text
+
+BACKGROUND_BLACK="\e[40m"
+BACKGROUND_RED="\e[41m"
+BACKGROUND_GREEN="\e[42m"
+BACKGROUND_YELLOW="\e[43m"
+BACKGROUND_BLUE="\e[44m"
+BACKGROUND_MAGENTA="\e[45m"
+BACKGROUND_CYAN="\e[46m"
+BACKGROUND_GRAY="\e[100m"
+BACKGROUND_LIGHT_GRAY="\e[47m"
+BACKGROUND_LIGHT_RED="\e[101m"
+BACKGROUND_LIGHT_GREEN="\e[102m"
+BACKGROUND_LIGHT_YELLOW="\e[103m"
+BACKGROUND_LIGHT_BLUE="\e[104m"
+BACKGROUND_LIGHT_MAGENTA="\e[105m"
+BACKGROUND_LIGHT_CYAN="\e[106m"
+BACKGROUND_WHITE="\e[107m" # With Whtie Text
+
+ENDSTYLE="\e[0m"
+
+NAME_SPACER="-"
+hyphen_count=$((${#USERNAME}+ ${#HOSTNAME}))
+for (( i=1; i<=$hyphen_count; i++ )); do
+    NAME_SPACER+="-"
+done
+
+USERNAME=$(whoami)
+HOSTNAME=$(cat /etc/hostname)
+get_os_name=$(lsb_release -a | grep "Description: *")
+OS_NAME=${get_os_name#'Description:'}
+KERNEL=$(</usr/src/linux/version)
+UPTIME=$(uptime -p)
+MEMORY=$(free -m)
+# PACKAGES=$(pacman -Q | wc -l)
+
+if [[ ${OS_NAME,,} == *"arch"* ]]; then
+	PACKAGES=$(pacman -Q | wc -l)
+	PACKAGES+=" (Pacman)"
+elif [[ ${OS_NAME,,} == *"debian"* ]]; then
+	PACKAGES="$(dpkg --get-selections | grep -v deinstall | wc -l)"
+	PACKAGES+=" (Apt)"
+elif [[ ${OS_NAME,,} == *"fedora"* ]]; then
+	PACKAGES="$(rpm -qa | wc -l)"
+	PACKAGES+=" (Dnf)"
+elif [[ ${OS_NAME,,} == *"gentoo"* ]]; then
+	PACKAGES="$(ls /var/db/pkg/* | wc -l)"
+	PACKAGES+=" (Portage)"
+else
+	PACKAGES="UNDEFINED"
+fi
+if ! command -v flatpak &> /dev/null; then
+    FLATPAK=""
+else
+    FLATPAK=", $(flatpak list | wc -l)"
+    FLATPAK+=" (Flatpak)"
+fi
+SHELL_NAME="$(echo $SHELL)"
+SHELL_VER="$($SHELL --version | grep -oP '\d+\.\d+(\.\d+)?')"
+RESOLUTION="$(xdpyinfo | awk '/dimensions/{print $2}')"
+DESKTOP_ENVIRONMENT="$(echo ${XDG_CURRENT_DESKTOP,,})"
+if [[ $DESKTOP_ENVIRONMENT == 'gnome' ]]; then
+	DESKTOP_VER="$(gnome-shell --version)"
+	DESKTOP_VERSION="${DESKTOP_VER#'GNOME Shell'}"
+fi
+while read -r line; do
+    case "$line" in
+        *i3*)
+            WINDOW_MANAGER="i3"
+            break
+            ;;
+        *openbox*)
+            WINDOW_MANAGER="Openbox"
+            break
+            ;;
+        *kwin*)
+            WINDOW_MANAGER="KWin"
+            break
+            ;;
+        *mutter*)
+            WINDOW_MANAGER="Mutter"
+            break
+            ;;
+        *xfwm4*)
+            WINDOW_MANAGER="Xfwm4"
+            break
+            ;;
+        *fluxbox*)
+            WINDOW_MANAGER="Fluxbox"
+            break
+            ;;
+        *awesome*)
+            WINDOW_MANAGER="Awesome"
+            break
+            ;;
+        *dwm*)
+            WINDOW_MANAGER="dwm"
+            break
+            ;;
+        *herbstluftwm*)
+            WINDOW_MANAGER="herbstluftwm"
+            break
+            ;;
+    esac
+done < <(ps -e | grep -E 'i3|openbox|kwin|mutter|xfwm4|fluxbox|awesome|dwm|herbstluftwm')
+# ACTIVE_THEME="$(gsettings get org.gnome.desktop.interface gtk-theme | tr -d "'") [GTK]"
+ACTIVE_THEME=$(gsettings get org.gnome.desktop.interface gtk-theme | tr -d "'")
+THEME_VERSION="[$(ls /usr/share/themes/*${ACTIVE_THEME}*/ | grep "gtk")]"
+FONT_NAME=$(gsettings get org.gnome.desktop.interface font-name | tr -d "'")
+ICON_THEME=$(gsettings get org.gnome.desktop.interface icon-theme | tr -d "'")
+CURSOR_THEME=$(gsettings get org.gnome.desktop.interface cursor-theme | tr -d "'")
+TERMINAL_DESKTOP=$(xdg-mime query default x-scheme-handler/terminal)
+if [ -n "$TERMINAL_DESKTOP" ]; then
+    TERMINAL_EXEC=$(grep -oP '^Exec=\K.*' /usr/share/applications/"$TERMINAL_DESKTOP" | head -n 1 | cut -d ' ' -f 1)
+fi
+if [ -z "$TERMINAL_EXEC" ]; then
+    TERMINAL_EXEC=$(gsettings get org.gnome.desktop.default-applications.terminal exec 2>/dev/null | tr -d "'")
+fi
+if [ -z "$TERMINAL_EXEC" ]; then
+    TERMINAL_EXEC=$(xfconf-query -c xfce4-session -p /sessions/Failsafe/Client0_Command 2>/dev/null | head -n 1)
+fi
+if [ -z "$TERMINAL_EXEC" ]; then
+    TERMINAL_EXEC=$TERMINAL
+fi
+if [ -z "$TERMINAL_EXEC" ]; then
+    for term in x-terminal-emulator gnome-terminal konsole xfce4-terminal xterm; do
+        if command -v $term > /dev/null 2>&1; then
+            TERMINAL_EXEC=$term
+            break
+        fi
+    done
+fi
+TERMINAL_EMULATOR="$(echo $TERMINAL_EXEC | tr "-" " ")"
+CPU_NAME=$(lscpu | awk -F ': +' '/Model name/ {sub(/ [0-9]+-.*/, "", $2); print $2}')
+CPU_CORES=$(lscpu | awk -F ': +' '/Core\(s\) per socket/ {print $2}')
+CPU_THREADS=$(lscpu | awk -F ': +' '/Thread\(s\) per core/ {print $2}')
+CPU_CORE_COUNT=$(($CPU_CORES * $CPU_THREADS))
+CPU_FREQUENCY=$(cat /proc/cpuinfo | grep MHz | awk 'NR==1{printf "%.2f GHz\n", $4 / 1000}')
+GPU_INFO=$(lspci | grep "VGA" | awk -F ": " '{print $2}' | grep -o '\[.*\]' | tr -d '[]')
+
+### Memory
+get_memory=$(free -m | awk '/^Mem:/{print $2}')
+TOTAL_MEMORY=$(($get_memory / 1000)) # Convert MB to GB
+get_used_memory=$(free -m | awk '/^Mem:/{print $3}')
+USED_MEMORY=$(($get_used_memory / 1000))
+USED_PERCENT="($(($TOTAL_MEMORY / $USED_MEMORY))%%)"
+
+### Get and Configure Networking Speed
+interfaces=$(ls /sys/class/net | grep -vE '^lo$|^br')
+for iface in $interfaces; do
+    speed=$(cat /sys/class/net/$iface/speed 2>/dev/null)
+    if [ -n "$speed" ]; then
+        get_net_speed="$speed"
+    fi
+done
+if [ $get_net_speed -ge 1000 ]; then
+    NET_SPEED="$(($get_net_speed / 1000)) Gbps"
+else
+    NET_SPEED="${get_net_speed} Mbps"
+fi
+
+### Bluetooth 
+BLUETOOTH_ADAPTER=$(lsusb | grep -E 'Blue' | sed -E 's/.*ID [0-9a-fA-F]{4}:[0-9a-fA-F]{4} (.*)$/\1/')
+
+### Motherboard Info
+MOTHERBOARD=$(cat /sys/class/dmi/id/board_name)
+BIOS_VENDOR=$(cat /sys/class/dmi/id/bios_vendor)
+BIOS_RELEASE=$(cat /sys/class/dmi/id/bios_release)
+BIOS_DATE=$(cat /sys/class/dmi/id/bios_date)
+
+### Spacer
+SPACER="${BOLD}                                         ${ENDSTYLE}"
+
+### Colors
+PRIMARY_COLORS="${BACKGROUND_BLACK}   ${ENDSTYLE}${BACKGROUND_RED}   ${ENDSTYLE}${BACKGROUND_GREEN}   ${ENDSTYLE}${BACKGROUND_YELLOW}   ${ENDSTYLE}${BACKGROUND_BLUE}   ${ENDSTYLE}${BACKGROUND_MAGENTA}   ${ENDSTYLE}${BACKGROUND_CYAN}   ${ENDSTYLE}${BACKGROUND_GRAY}   ${ENDSTYLE}"
+SECONDARY_COLORS="${BACKGROUND_LIGHT_GRAY}   ${ENDSTYLE}${BACKGROUND_LIGHT_RED}   ${ENDSTYLE}${BACKGROUND_LIGHT_GREEN}   ${ENDSTYLE}${BACKGROUND_LIGHT_YELLOW}   ${ENDSTYLE}${BACKGROUND_LIGHT_BLUE}   ${ENDSTYLE}${BACKGROUND_LIGHT_MAGENTA}   ${ENDSTYLE}${BACKGROUND_LIGHT_CYAN}   ${ENDSTYLE}${BACKGROUND_WHITE}   ${ENDSTYLE}"
+
+LAYER1="                   -\`                    "
+LAYER2="                  .o+\`                   "
+LAYER3="                 \`ooo/                   "
+LAYER4="                \`+oooo:                  "
+LAYER5="               \`+oooooo:                 "
+LAYER6="               -+oooooo+:                "
+LAYER7="             \`/:-:++oooo+:               "
+LAYER8="            \`/++++/+++++++:              "
+LAYER9="           \`/++++++++++++++:             "
+LAYER10="          \`/+++ooooooooooooo/\`           "
+LAYER11="         ./ooosssso++osssssso+\`          "
+LAYER12="        .oossssso-\`\`\`\`/ossssss+\`         "   
+LAYER13="       -osssssso.      :ssssssso.        "
+LAYER14="      :osssssss        osssso+++.        "
+LAYER15="     /ossssssss         +ssssooo/-       "
+LAYER16="   \`/ossssso+:-         -:/+osssso+-     "
+LAYER17="  \`+sso+:-\`                 \`.-/+oso:    " 
+LAYER18=" \`++:.                           \`-/+/   "
+LAYER19=" .\`                                 \`/   "
+LAYER20="                                         "
+
+main() {
+	# clear
+	prompt=""
+	prompt+="${SPACER}${CYAN}${USERNAME}${ENDSTYLE}@${CYAN}${HOSTNAME}${ENDSTYLE}"
+	prompt+="\n${SPACER}${BOLD}${NAME_SPACER}${ENDSTYLE}"
+	prompt+="\n${LAYER1}${CYAN}OS${ENDSTYLE}: ${OS_NAME#'Description:'}"
+	prompt+="\n${LAYER2}${CYAN}Kernel${ENDSTYLE}: ${KERNEL}"
+	prompt+="\n${LAYER3}${CYAN}Uptime${ENDSTYLE}: ${UPTIME#'up'}"
+	prompt+="\n${LAYER4}${CYAN}Packages${ENDSTYLE}: ${PACKAGES}${FLATPAK}"
+	prompt+="\n${LAYER5}${CYAN}Shell${ENDSTYLE}: ${SHELL_NAME#'/usr/bin/'} ${SHELL_VER}"
+	prompt+="\n${LAYER6}${CYAN}Resolution${ENDSTYLE}: ${RESOLUTION}"
+	prompt+="\n${LAYER7}${CYAN}DE${ENDSTYLE}: ${DESKTOP_ENVIRONMENT^} ${DESKTOP_VERSION} (${XDG_SESSION_TYPE})"
+	prompt+="\n${LAYER8}${CYAN}WM${ENDSTYLE}: ${WINDOW_MANAGER}"
+	prompt+="\n${LAYER9}${CYAN}Theme${ENDSTYLE}: ${ACTIVE_THEME} ${THEME_VERSION}"
+	prompt+="\n${LAYER10}${CYAN}Icons${ENDSTYLE}: ${ICON_THEME}"
+	prompt+="\n${LAYER11}${CYAN}Font${ENDSTYLE}: ${FONT_NAME}"
+	prompt+="\n${LAYER12}${CYAN}Cursor${ENDSTYLE}: ${CURSOR_THEME}"
+	prompt+="\n${LAYER13}${CYAN}Terminal${ENDSTYLE}: ${TERMINAL_EMULATOR^}"
+    prompt+="\n${LAYER14}${CYAN}CPU${ENDSTYLE}: ${CPU_NAME} (${CPU_CORE_COUNT}) @ ${CPU_FREQUENCY}"
+	prompt+="\n${LAYER15}${CYAN}GPU${ENDSTYLE}: ${GPU_INFO}"
+	prompt+="\n${LAYER16}${CYAN}Memory${ENDSTYLE}: ${USED_MEMORY}GB / ${TOTAL_MEMORY}GB ${USED_PERCENT}"
+	prompt+="\n${LAYER17}${CYAN}Network${ENDSTYLE}: ${NET_SPEED}"
+	prompt+="\n${LAYER18}${CYAN}Bluetooth${ENDSTYLE}: ${BLUETOOTH_ADAPTER}"
+	prompt+="\n${LAYER19}${CYAN}Motherboard${ENDSTYLE}: ${MOTHERBOARD}"
+	prompt+="\n${LAYER20}${CYAN}BIOS${ENDSTYLE}: ${BIOS_VENDOR} v.${BIOS_RELEASE} (${BIOS_DATE})"
+    prompt+="\n"
+    prompt+="\n${SPACER}${PRIMARY_COLORS}"
+    prompt+="\n${SPACER}${SECONDARY_COLORS}"
+	printf "$prompt\n"
+}
+
+main
