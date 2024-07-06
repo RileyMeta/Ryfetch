@@ -289,8 +289,12 @@ main() {
 	prompt+="\n${LAYER15}${CYAN}GPU${ENDSTYLE}: ${GPU_INFO}"
 	prompt+="\n${LAYER16}${CYAN}Memory${ENDSTYLE}: ${USED_MEMORY}GB / ${TOTAL_MEMORY}GB ${USED_PERCENT}"
 	prompt+="\n${LAYER17}${CYAN}Network${ENDSTYLE}: ${NET_SPEED}"
-	prompt+="\n${LAYER18}${CYAN}Bluetooth${ENDSTYLE}: ${BLUETOOTH_ADAPTER}"
-	prompt+="\n${LAYER19}${CYAN}Motherboard${ENDSTYLE}: ${MOTHERBOARD}"
+    if ! command -v lsusb &> /dev/null; then
+	    prompt+="\n${LAYER18}${CYAN}Bluetooth${ENDSTYLE}: ${BLUETOOTH_ADAPTER}"
+    else
+        prompt+="\n${LAYER18}"
+	fi
+    prompt+="\n${LAYER19}${CYAN}Motherboard${ENDSTYLE}: ${MOTHERBOARD}"
 	prompt+="\n${LAYER20}${CYAN}BIOS${ENDSTYLE}: ${BIOS_VENDOR} v.${BIOS_RELEASE} (${BIOS_DATE})"
     prompt+="\n${LAYER20}"
     prompt+="\n${SPACER}${PRIMARY_COLORS}"
