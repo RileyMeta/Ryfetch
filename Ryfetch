@@ -49,8 +49,9 @@ done
 
 USERNAME=$(whoami)
 HOSTNAME=$(cat /etc/hostname)
-get_os_name=$(lsb_release -a | grep "Description: *")
-OS_NAME=${get_os_name#'Description:'}
+
+get_os_name=$(cat /etc/os-release | grep "PRETTY_NAME=*" | tr -d '"')
+OS_NAME=${get_os_name#'PRETTY_NAME='}
 KERNEL=$(</usr/src/linux/version)
 UPTIME=$(uptime -p)
 MEMORY=$(free -m)
