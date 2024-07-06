@@ -56,21 +56,22 @@ UPTIME=$(uptime -p)
 MEMORY=$(free -m)
 # PACKAGES=$(pacman -Q | wc -l)
 
-if [[ ${OS_NAME,,} == *"arch"* ]]; then
-	PACKAGES=$(pacman -Q | wc -l)
-	PACKAGES+=" (Pacman)"
-elif [[ ${OS_NAME,,} == *"debian"* ]]; then
-	PACKAGES="$(dpkg --get-selections | grep -v deinstall | wc -l)"
-	PACKAGES+=" (Apt)"
-elif [[ ${OS_NAME,,} == *"fedora"* ]]; then
-	PACKAGES="$(rpm -qa | wc -l)"
-	PACKAGES+=" (Dnf)"
-elif [[ ${OS_NAME,,} == *"gentoo"* ]]; then
-	PACKAGES="$(ls /var/db/pkg/* | wc -l)"
-	PACKAGES+=" (Portage)"
-else
-	PACKAGES="UNDEFINED"
-fi
+case ${OS_NAME,,} in
+    *"arch"*) 	
+		PACKAGES=$(pacman -Q | wc -l)
+	    PACKAGES+=" (Pacman)";;
+	*"debian"*|*"ubuntu"*)
+		PACKAGES="$(dpkg --get-selections | grep -v deinstall | wc -l)"
+		PACKAGES+=" (Dpkg)";;
+	*"fedora"*)
+		PACKAGES="$(rpm -qa | wc -l)"
+		PACKAGES+=" (Dnf)";;
+	*"gentoo"*)
+		PACKAGES="$(ls /var/db/pkg/* | wc -l)"
+		PACKAGES+=" (Portage)";;
+	*) PACKAGES="UNDEFINED";;
+esac
+
 if ! command -v flatpak &> /dev/null; then
     FLATPAK=""
 else
@@ -145,7 +146,7 @@ if [ -z "$TERMINAL_EXEC" ]; then
     TERMINAL_EXEC=$TERMINAL
 fi
 if [ -z "$TERMINAL_EXEC" ]; then
-    for term in x-terminal-emulator gnome-terminal konsole xfce4-terminal xterm; do
+    for term in x-terminal-emulator gnome-terminal konsole xfce4-terminal xterm kitty alacritty; do
         if command -v $term > /dev/null 2>&1; then
             TERMINAL_EXEC=$term
             break
@@ -194,29 +195,76 @@ BIOS_DATE=$(cat /sys/class/dmi/id/bios_date)
 SPACER="${BOLD}                                         ${ENDSTYLE}"
 
 ### Colors
-PRIMARY_COLORS="${BACKGROUND_BLACK}   ${ENDSTYLE}${BACKGROUND_RED}   ${ENDSTYLE}${BACKGROUND_GREEN}   ${ENDSTYLE}${BACKGROUND_YELLOW}   ${ENDSTYLE}${BACKGROUND_BLUE}   ${ENDSTYLE}${BACKGROUND_MAGENTA}   ${ENDSTYLE}${BACKGROUND_CYAN}   ${ENDSTYLE}${BACKGROUND_GRAY}   ${ENDSTYLE}"
-SECONDARY_COLORS="${BACKGROUND_LIGHT_GRAY}   ${ENDSTYLE}${BACKGROUND_LIGHT_RED}   ${ENDSTYLE}${BACKGROUND_LIGHT_GREEN}   ${ENDSTYLE}${BACKGROUND_LIGHT_YELLOW}   ${ENDSTYLE}${BACKGROUND_LIGHT_BLUE}   ${ENDSTYLE}${BACKGROUND_LIGHT_MAGENTA}   ${ENDSTYLE}${BACKGROUND_LIGHT_CYAN}   ${ENDSTYLE}${BACKGROUND_WHITE}   ${ENDSTYLE}"
+PRIMARY_COLORS="${BACKGROUND_BLACK}   ${ENDSTYLE}${BACKGROUND_RED}   ${ENDSTYLE}${BACKGROUND_GREEN}   ${ENDSTYLE}${BACKGROUND_YELLOW}   ${ENDSTYLE}${BACKGROUND_BLUE}   ${ENDSTYLE}${BACKGROUND_MAGENTA}   ${ENDSTYLE}${BACKGROUND_CYAN}   ${ENDSTYLE}${BACKGROUND_LIGHT_GRAY}   ${ENDSTYLE}"
+SECONDARY_COLORS="${BACKGROUND_GRAY}   ${ENDSTYLE}${BACKGROUND_LIGHT_RED}   ${ENDSTYLE}${BACKGROUND_LIGHT_GREEN}   ${ENDSTYLE}${BACKGROUND_LIGHT_YELLOW}   ${ENDSTYLE}${BACKGROUND_LIGHT_BLUE}   ${ENDSTYLE}${BACKGROUND_LIGHT_MAGENTA}   ${ENDSTYLE}${BACKGROUND_LIGHT_CYAN}   ${ENDSTYLE}${BACKGROUND_WHITE}   ${ENDSTYLE}"
 
-LAYER1="                   -\`                    "
-LAYER2="                  .o+\`                   "
-LAYER3="                 \`ooo/                   "
-LAYER4="                \`+oooo:                  "
-LAYER5="               \`+oooooo:                 "
-LAYER6="               -+oooooo+:                "
-LAYER7="             \`/:-:++oooo+:               "
-LAYER8="            \`/++++/+++++++:              "
-LAYER9="           \`/++++++++++++++:             "
-LAYER10="          \`/+++ooooooooooooo/\`           "
-LAYER11="         ./ooosssso++osssssso+\`          "
-LAYER12="        .oossssso-\`\`\`\`/ossssss+\`         "   
-LAYER13="       -osssssso.      :ssssssso.        "
-LAYER14="      :osssssss        osssso+++.        "
-LAYER15="     /ossssssss         +ssssooo/-       "
-LAYER16="   \`/ossssso+:-         -:/+osssso+-     "
-LAYER17="  \`+sso+:-\`                 \`.-/+oso:    " 
-LAYER18=" \`++:.                           \`-/+/   "
-LAYER19=" .\`                                 \`/   "
-LAYER20="                                         "
+case ${OS_NAME,,} in
+*"arch"*)
+	LAYER1="                   -\`                    "
+	LAYER2="                  .o+\`                   "
+	LAYER3="                 \`ooo/                   "
+	LAYER4="                \`+oooo:                  "
+	LAYER5="               \`+oooooo:                 "
+	LAYER6="               -+oooooo+:                "
+	LAYER7="             \`/:-:++oooo+:               "
+	LAYER8="            \`/++++/+++++++:              "
+	LAYER9="           \`/++++++++++++++:             "
+	LAYER10="          \`/+++ooooooooooooo/\`           "
+	LAYER11="         ./ooosssso++osssssso+\`          "
+	LAYER12="        .oossssso-\`\`\`\`/ossssss+\`         "   
+	LAYER13="       -osssssso.      :ssssssso.        "
+	LAYER14="      :osssssss        osssso+++.        "
+	LAYER15="     /ossssssss         +ssssooo/-       "
+	LAYER16="   \`/ossssso+:-         -:/+osssso+-     "
+	LAYER17="  \`+sso+:-\`                 \`.-/+oso:    " 
+	LAYER18=" \`++:.                           \`-/+/   "
+	LAYER19=" .\`                                 \`/   "
+	LAYER20="                                         ";;
+*"debian"*) 
+	LAYER1="	        _,met$\$$\$$\gg.           "
+    LAYER2="	     ,g$\$$\$$\$$\$$\$$\$$\$$\P.        "
+    LAYER3="	   ,g$\$\P\"\"       \"\"\"Y$\$.\".      "
+    LAYER4="	  ,$\$P\'              \`\$$\$.       "
+    LAYER5="	',$\$P       ,ggs.     \`$\$b:      "
+    LAYER6="	\`d$\$\'     ,\$P\"\'   .    $\$$       "
+    LAYER7="	 $\$P      d$\'     ,    $\$P       "
+    LAYER8="	 $\$:      $\$.   -    ,d$\$'       "
+    LAYER9="	 $\$;      Y\$b._   _,d\$P'         "
+    LAYER10="	 Y$\$.    \`.\`\"Y\$\$\$\$P\"\'            "
+    LAYER11="	 \`$\$b      \"-.__                 "
+    LAYER12="	  \`\Y\$\$\b                           "
+    LAYER13="	   \`Y\$\$\.                        "
+    LAYER14="	     \`\$\$b\.                      "
+    LAYER15="	       \`Y\$\$b.                    "
+    LAYER16="	         \`\"\Y\$\b._                  "
+    LAYER17="	             \`\"\"\"\"               "
+	LAYER18="${SPACER}"
+	LAYER19="${SPACER}"
+	LAYER20="${SPACER}"
+;;
+*"ubuntu"*)
+    LAYER1="                **##*   ###*              "
+    LAYER2="            ######### #########           " 
+    LAYER3="          ##########* ##########          " 
+    LAYER4="        ########*     ##########          " 
+    LAYER5="       ######         *######## ##        " 
+    LAYER6="         *#              ###* *####       " 
+    LAYER7="    ######*                   #####       " 
+    LAYER8="  ##########                   #####      " 
+    LAYER9="  ##########                   #####      " 
+    LAYER10=" ##########                   #####       " 
+    LAYER11="   #######                    #####       " 
+    LAYER12="                             #####        " 
+    LAYER13="    ######*            ###* ######        " 
+    LAYER14="      ######        ########* ###         " 
+    LAYER15="       #########   ##########             " 
+    LAYER16="         #########*##########             " 
+    LAYER17="           ######## #########             " 
+    LAYER18="                ###*  *####               "
+    LAYER19="${SPACER} "
+    LAYER20="${SPACER} "
+;;
+esac
 
 main() {
 	# clear
@@ -243,7 +291,7 @@ main() {
 	prompt+="\n${LAYER18}${CYAN}Bluetooth${ENDSTYLE}: ${BLUETOOTH_ADAPTER}"
 	prompt+="\n${LAYER19}${CYAN}Motherboard${ENDSTYLE}: ${MOTHERBOARD}"
 	prompt+="\n${LAYER20}${CYAN}BIOS${ENDSTYLE}: ${BIOS_VENDOR} v.${BIOS_RELEASE} (${BIOS_DATE})"
-    prompt+="\n"
+    prompt+="\n${LAYER20}"
     prompt+="\n${SPACER}${PRIMARY_COLORS}"
     prompt+="\n${SPACER}${SECONDARY_COLORS}"
 	printf "$prompt\n"
